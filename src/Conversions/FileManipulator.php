@@ -25,7 +25,7 @@ class FileManipulator
             return;
         }
 
-        [$queuedConversions, $conversions] = ConversionCollection::createForMedia($media)
+        $conversions = ConversionCollection::createForMedia($media)
             ->filter(function (Conversion $conversion) use ($onlyConversionNames) {
                 if (count($onlyConversionNames) === 0) {
                     return true;
@@ -34,11 +34,24 @@ class FileManipulator
                 return in_array($conversion->getName(), $onlyConversionNames);
             })
             ->filter(fn (Conversion $conversion) => $conversion->shouldBePerformedOn($media->collection_name))
-            ->partition(fn (Conversion $conversion) => $queueAll || $conversion->shouldBeQueued());
+            ->mapToGroups(function (Conversion $conversion) use ($queueAll) {
+                $group = match (true) {
+                    $queueAll || $conversion->shouldBeQueued() => 'queued',
+                    $conversion->shouldBeDeferred() => 'deferred',
+                    default => 'immediate',
+                };
+                
+                return [$group => $conversion];
+            });
+
+        $immediateConversions = $conversions['immediate'] ?? new ConversionCollection();
+        $queuedConversions = $conversions['queued'] ?? new ConversionCollection();
+        $deferredConversions = $conversions['deferred'] ?? new ConversionCollection();
 
         $this
-            ->performConversions($conversions, $media, $onlyMissing)
+            ->performConversions($immediateConversions, $media, $onlyMissing)
             ->dispatchQueuedConversions($media, $queuedConversions, $onlyMissing)
+            ->deferConversions($media, $deferredConversions, $onlyMissing)
             ->generateResponsiveImages($media, $withResponsiveImages);
     }
 
@@ -109,6 +122,21 @@ class FileManipulator
         config('media-library.queue_conversions_after_database_commit')
             ? dispatch($job)->afterCommit()
             : dispatch($job);
+
+        return $this;
+    }
+
+    /** @return $this */
+   protected function deferConversions(
+        Media $media,
+        ConversionCollection $conversions,
+        bool $onlyMissing = false
+    ): self {
+        if ($conversions->isEmpty()) {
+            return $this;
+        }
+
+        defer(fn () => $this->performConversions($conversions, $media, $onlyMissing));
 
         return $this;
     }
