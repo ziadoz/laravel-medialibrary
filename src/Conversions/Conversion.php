@@ -24,6 +24,8 @@ class Conversion
 
     protected bool $performOnQueue;
 
+    protected bool $performOnDefer;
+
     protected bool $keepOriginalImageFormat = false;
 
     protected bool $generateResponsiveImages = false;
@@ -47,6 +49,8 @@ class Conversion
         $this->loadingAttributeValue = config('media-library.default_loading_attribute_value');
 
         $this->performOnQueue = config('media-library.queue_conversions_by_default', true);
+
+        $this->performOnDefer = false;
     }
 
     public static function create(string $name): self
@@ -179,6 +183,13 @@ class Conversion
         return $this;
     }
 
+    public function defer(): self
+    {
+        $this->performOnDefer = true;
+
+        return $this;
+    }
+
     public function nonOptimized(): self
     {
         $this->removeManipulation('optimize');
@@ -213,6 +224,11 @@ class Conversion
     public function shouldBeQueued(): bool
     {
         return $this->performOnQueue;
+    }
+
+    public function shouldBeDeferred(): bool
+    {
+        return $this->performOnDefer;
     }
 
     public function getResultExtension(string $originalFileExtension = ''): string
