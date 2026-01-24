@@ -136,11 +136,16 @@ class FileManipulator
             return $this;
         }
 
-        defer(function () use ($conversions, $media, $onlyMissing) {
-            $this->performConversions($conversions, $media, $onlyMissing);
+        $performConversionsJobClass = config(
+            'media-library.jobs.perform_conversions',
+            PerformConversionsJob::class
+        );
 
-            return true;
-        });
+        /** @var PerformConversionsJob $job */
+        $job = (new $performConversionsJobClass($conversions, $media, $onlyMissing))
+            ->onConnection('deferred');
+
+        dispatch($job);
 
         return $this;
     }
