@@ -36,8 +36,8 @@ class FileManipulator
             ->filter(fn (Conversion $conversion) => $conversion->shouldBePerformedOn($media->collection_name))
             ->mapToGroups(function (Conversion $conversion) use ($queueAll) {
                 $group = match (true) {
+                    ! $queueAll && $conversion->shouldBeDeferred() => 'deferred',    
                     $queueAll || $conversion->shouldBeQueued() => 'queued',
-                    $conversion->shouldBeDeferred() => 'deferred',
                     default => 'immediate',
                 };
                 
