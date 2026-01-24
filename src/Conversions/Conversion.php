@@ -4,6 +4,7 @@ namespace Spatie\MediaLibrary\Conversions;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\Conditionable;
+use RuntimeException;
 use Spatie\ImageOptimizer\OptimizerChainFactory;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\ResponsiveImages\WidthCalculator\WidthCalculator;
@@ -185,6 +186,10 @@ class Conversion
 
     public function deferred(): self
     {
+        if (! function_exists('defer')) {
+            throw new RuntimeException('Laravel ' . LARAVEL_VERSION . ' does not support defer');
+        }
+
         $this->performOnDefer = true;
 
         return $this;
