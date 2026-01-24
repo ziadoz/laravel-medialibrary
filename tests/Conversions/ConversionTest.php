@@ -81,6 +81,10 @@ it('can be set to non queued', function () {
     expect($this->conversion->nonQueued()->shouldBeQueued())->toBeFalse();
 });
 
+it('can be set to deferred', function () {
+    expect($this->conversion->deferred()->shouldBeDeferred())->toBeTrue();
+});
+
 it('can determine the extension of the result', function () {
     $this->conversion->width(50);
 
