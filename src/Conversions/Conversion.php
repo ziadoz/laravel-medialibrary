@@ -183,7 +183,7 @@ class Conversion
         return $this;
     }
 
-    public function defer(): self
+    public function deferred(): self
     {
         $this->performOnDefer = true;
 
