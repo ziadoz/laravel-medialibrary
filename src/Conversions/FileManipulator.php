@@ -136,7 +136,11 @@ class FileManipulator
             return $this;
         }
 
-        defer(fn () => $this->performConversions($conversions, $media, $onlyMissing));
+        defer(function () use ($conversions, $media, $onlyMissing) {
+            $this->performConversions($conversions, $media, $onlyMissing);
+
+            return true;
+        });
 
         return $this;
     }
